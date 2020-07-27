@@ -1,0 +1,115 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="12.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <Import Project="Common.Build.props"/>
+  <PropertyGroup>
+    <Win32_WinNTVersion Condition="'$(NtTargetVersion)'=='$(NtTargetVersion_Win7)'">0x0601</Win32_WinNTVersion>
+    <Win32_WinNTVersion Condition="'$(NtTargetVersion)'=='$(NtTargetVersion_Win8)'">0x0602</Win32_WinNTVersion>
+    <Win32_WinNTVersion Condition="'$(NtTargetVersion)'=='$(NtTargetVersion_WinBlue)'">0x0603</Win32_WinNTVersion>
+    <Win32_WinNTVersion Condition="'$(NtTargetVersion)'=='$(NtTargetVersion_Win10)'">0x0A00</Win32_WinNTVersion>
+
+    <!-- Always use Platform SDK for core builds -->
+    <EventManifestXmlPath Condition="'$(TargetPlatformVersion)'=='8.1'">$(WindowsSdkDir)Include\um</EventManifestXmlPath>
+    <EventManifestXmlPath Condition="'$(TargetPlatformVersion)'!='8.1'">$(WindowsSdkDir)Include\$(TargetPlatformVersion)\um</EventManifestXmlPath>
+  </PropertyGroup>
+  <PropertyGroup>
+    <NoThrowNewLib>nothrownew.obj</NoThrowNewLib>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(RunCodeAnalysis)'=='' AND '$(Configuration)'=='Release'">
+    <RunCodeAnalysis>$(BuildWithCodeAnalysis)</RunCodeAnalysis>
+  </PropertyGroup>
+  <Import Condition="'$(ChakraICU)'!='false' AND exists('$(ChakraCoreRootDirectory)deps\Chakra.ICU\Chakra.ICU.props')" Project="$(ChakraCoreRootDirectory)deps\Chakra.ICU\Chakra.ICU.props" />
+  <ItemDefinitionGroup>
+    <ClCompile>
+      <PreprocessorDefinitions>
+        %(PreprocessorDefinitions);
+        _CHAKRACOREBUILD;
+        _WIN32_WINNT=$(Win32_WinNTVersion);
+        WINVER=$(Win32_WinNTVersion);
+        WIN32_LEAN_AND_MEAN=1
+      </PreprocessorDefinitions>
+      <PreprocessorDefinitions Condition="'$(BuildJIT)'=='false'">
+        %(PreprocessorDefinitions);
+        DISABLE_JIT=1
+      </PreprocessorDefinitions>
+      <PreprocessorDefinitions Condition="'$(BuildScriptDebug)'=='false'">
+        %(PreprocessorDefinitions);
+        BUILD_WITHOUT_SCRIPT_DEBUG=1
+      </PreprocessorDefinitions>
+      <PreprocessorDefinitions Condition="'$(BuildLite)'=='true'">
+        %(PreprocessorDefinitions);
+        CHAKRACORE_LITE
+      </PreprocessorDefinitions>
+      <PreprocessorDefinitions Condition="'$(ChakraICU)'!='false'">
+        %(PreprocessorDefinitions);
+        HAS_ICU;
+        U_DISABLE_RENAMING=1; <!-- Disable renaming to maintain compatibility with Windows Kit ICU's icuuc/icuin.lib -->
+      </PreprocessorDefinitions>
+      <PreprocessorDefinitions Condition="'$(EnableIntl)'=='true' AND '$(ChakraICU)'!='false'">
+        %(PreprocessorDefinitions);
+        INTL_ICU=1
+      </PreprocessorDefinitions>
+      <PreprocessorDefinitions Condition="'$(ChakraICU)'=='static'">
+        %(PreprocessorDefinitions);
+        U_STATIC_IMPLEMENTATION=1
+      </PreprocessorDefinitions>
+      <PreprocessorDefinitions Condition="'$(ChakraICU)'=='windows'">
+        %(PreprocessorDefinitions);
+        WINDOWS10_ICU
+      </PreprocessorDefinitions>
+      <PreprocessorDefinitions Condition="'$(ChakraICU)'!='windows' AND '$(ChakraICU)'!='false'">
+        %(PreprocessorDefinitions);
+        ICU_VERSION=$(IcuVersionMajor)
+      </PreprocessorDefinitions>
+      <PreprocessorDefinitions Condition="'$(ForceSWB)'=='true'">
+        %(PreprocessorDefinitions);
+        GLOBAL_ENABLE_WRITE_BARRIER=1
+      </PreprocessorDefinitions>
+      <PreprocessorDefinitions Condition="'$(NTDDIVersion)'!=''" >%(PreprocessorDefinitions);NTDDI_VERSION=$(NTDDIVersion)</PreprocessorDefinitions>
+      <!-- REVIEW: These warnings are introduced when moving to VS2015 tools, may want to clean these up -->
+      <DisableSpecificWarnings>
+        %(DisableSpecificWarnings);
+        4458;     <!-- declaration of '' hides class member -->
+        4312;     <!-- 'type cast': conversion from '' to '' of greater size -->
+        4800;     <!-- 'type' : forcing value to bool 'true' or 'false' (performance warning) [always off in 2017 by default, but warns in 2015] -->
+      </DisableSpecificWarnings>
+      <!-- Use the debug CRT in debug build -->
+      <RuntimeLibrary Condition="'$(Configuration)'=='Debug' AND '$(RuntimeLib)'!='static_library'">MultiThreadedDebugDLL</RuntimeLibrary>
+      <RuntimeLibrary Condition="'$(Configuration)'=='Debug' AND '$(RuntimeLib)'=='static_library'">MultiThreadedDebug</RuntimeLibrary>
+      <AdditionalIncludeDirectories>
+        $(ChakraCoreRootDirectory)\lib\common\placeholder;
+        $(IntDir)..\CoreManifests;
+        %(AdditionalIncludeDirectories)
+      </AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories Condition="'$(IcuIncludeDirectories)'!=''">
+        $(IcuIncludeDirectories);
+        %(AdditionalIncludeDirectories)
+      </AdditionalIncludeDirectories>
+    </ClCompile>
+
+    <ResourceCompile>
+      <PreprocessorDefinitions>%(PreprocessorDefinitions);_CHAKRACOREBUILD</PreprocessorDefinitions>
+    </ResourceCompile>
+  </ItemDefinitionGroup>
+
+  <!-- Link dependencies for projects that link with Chakra libraries -->
+  <PropertyGroup>
+    <ChakraCommonLinkDependencies>
+        oleaut32.lib;
+        version.lib;
+        bcrypt.lib
+    </ChakraCommonLinkDependencies>
+    <RLCommonLinkDependencies>
+        kernel32.lib;
+        ole32.lib
+    </RLCommonLinkDependencies>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(DebugBuild)'=='true'">
+    <ChakraCommonLinkDependencies>
+        $(ChakraCommonLinkDependencies);
+        dbghelp.lib;
+        user32.lib
+    </ChakraCommonLinkDependencies>
+  </PropertyGroup>
+
+  <Import Condition="'$(Clang)'!=''" Project="Chakra.Build.Clang.props"/>
+</Project>

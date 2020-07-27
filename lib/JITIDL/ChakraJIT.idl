@@ -1,0 +1,133 @@
+//-------------------------------------------------------------------------------------------------------
+// Copyright (C) Microsoft. All rights reserved.
+// Licensed under the MIT license. See LICENSE.txt file in the project root for full license information.
+//-------------------------------------------------------------------------------------------------------
+
+cpp_quote("#ifndef __JITTypes_h__")
+cpp_quote("#define __JITTypes_h__")
+
+#include "JITTypes.h"
+
+// we can't include Windows.h, so for simplicity, let's define these values ourself
+// from: https://msdn.microsoft.com/en-us/library/windows/desktop/ms684880.aspx
+#define PROCESS_VM_OPERATION 0x0008
+#define PROCESS_VM_READ 0x0010
+#define PROCESS_VM_WRITE 0x0020
+#define PROCESS_QUERY_LIMITED_INFORMATION 0x1000
+
+cpp_quote("#endif //__JITTypes_h__")
+
+[
+    uuid(ead694ed-2243-44cb-a9dc-85d3ba934dab),
+    pointer_default(unique)
+]
+interface IChakraJIT
+{
+    typedef CodeGenWorkItemIDL* pCodeGenWorkItemIDL;
+    HRESULT Shutdown([in] handle_t binding);
+
+    HRESULT ConnectProcessWithProcessHandle(
+        [in] handle_t binding,
+        [in, system_handle(sh_process, PROCESS_VM_OPERATION | PROCESS_VM_READ | PROCESS_VM_WRITE | PROCESS_QUERY_LIMITED_INFORMATION)] HANDLE processHandle,
+        [in] CHAKRA_PTR chakraBaseAddress,
+        [in] CHAKRA_PTR crtBaseAddress
+    );
+
+#if !(WINVER >= _WIN32_WINNT_WINBLUE)
+    HRESULT ConnectProcess(
+        [in] handle_t binding,
+        [in] CHAKRA_PTR chakraBaseAddress,
+        [in] CHAKRA_PTR crtBaseAddress
+    );
+#endif
+
+    HRESULT InitializeThreadContext(
+        [in] handle_t binding,
+        [in] ThreadContextDataIDL * threadData,
+        [out] PPTHREADCONTEXT_HANDLE threadContextInfoAddress,
+        [out] CHAKRA_PTR * prereservedRegionAddr,
+        [out] CHAKRA_PTR * jitThunkAddr);
+
+
+    HRESULT CleanupThreadContext(
+        [in] handle_t binding,
+        [in, out] PPTHREADCONTEXT_HANDLE threadContextInfoAddress);
+
+    HRESULT UpdatePropertyRecordMap(
+        [in] handle_t binding,
+        [in] PTHREADCONTEXT_HANDLE threadContextInfoAddress,
+        [in, unique] BVSparseNodeIDL * updatedPropsBVHead);
+
+    HRESULT AddDOMFastPathHelper(
+        [in] handle_t binding,
+        [in] PSCRIPTCONTEXT_HANDLE scriptContextInfoAddress,
+        [in] CHAKRA_PTR funcInfoAddr,
+        [in] int helper);
+
+    HRESULT AddModuleRecordInfo(
+        [in] handle_t binding,
+        [in] PSCRIPTCONTEXT_HANDLE scriptContextInfoAddress,
+        [in] unsigned int moduleId,
+        [in] CHAKRA_PTR localExportSlotsAddr);
+
+    HRESULT SetWellKnownHostTypeId(
+        [in] handle_t binding,
+        [in] PTHREADCONTEXT_HANDLE threadContextInfoAddress,
+        [in] int typeId);
+
+    HRESULT InitializeScriptContext(
+        [in] handle_t binding,
+        [in] ScriptContextDataIDL * scriptContextData,
+        [in] PTHREADCONTEXT_HANDLE threadContextInfoAddress,
+        [out] PPSCRIPTCONTEXT_HANDLE scriptContextInfoAddress);
+
+    HRESULT CloseScriptContext(
+        [in] handle_t binding,
+        [in] PSCRIPTCONTEXT_HANDLE scriptContextInfoAddress);
+
+    HRESULT CleanupScriptContext(
+        [in] handle_t binding,
+        [in, out] PPSCRIPTCONTEXT_HANDLE scriptContextInfoAddress);
+
+    HRESULT FreeAllocation(
+        [in] handle_t binding,
+        [in] PSCRIPTCONTEXT_HANDLE scriptContextInfoAddress,
+        [in] CHAKRA_PTR codeAddress);
+
+    HRESULT NewInterpreterThunkBlock(
+        [in] handle_t binding,
+        [in] PSCRIPTCONTEXT_HANDLE scriptContextInfoAddress,
+        [in] InterpreterThunkInputIDL * thunkInput,
+        [out] InterpreterThunkOutputIDL * thunkOutput);
+
+    HRESULT DecommitInterpreterBufferManager(
+        [in] handle_t binding,
+        [in] PSCRIPTCONTEXT_HANDLE scriptContextInfoAddress,
+        [in] boolean asmJsManager);
+
+    HRESULT IsNativeAddr(
+        [in] handle_t binding,
+        [in] PTHREADCONTEXT_HANDLE threadContextInfoAddress,
+        [in] CHAKRA_PTR address,
+        [out] boolean * result);
+
+    HRESULT SetIsPRNGSeeded(
+        [in] handle_t binding,
+        [in] PSCRIPTCONTEXT_HANDLE scriptContextInfoAddress,
+        [in] boolean value);
+
+    HRESULT RemoteCodeGen(
+        [in] handle_t binding,
+        [in] PSCRIPTCONTEXT_HANDLE scriptContextInfoAddress,
+        [in] CodeGenWorkItemIDL * workItemData,
+        [out] JITOutputIDL * jitData);
+
+#if DBG
+    HRESULT IsInterpreterThunkAddr(
+        [in] handle_t binding,
+        [in] PSCRIPTCONTEXT_HANDLE scriptContextInfoAddress,
+        [in] CHAKRA_PTR address,
+        [in] boolean asmjsThunk,
+        [out] boolean * result);
+#endif
+}

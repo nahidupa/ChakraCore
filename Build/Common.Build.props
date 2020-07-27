@@ -1,0 +1,186 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="12.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemDefinitionGroup>
+    <Midl>
+      <StructMemberAlignment Condition="'%(Midl.StructMemberAlignment)' == ''">8</StructMemberAlignment>
+      <DefaultCharType>Unsigned</DefaultCharType>
+
+      <IdlType>Ole</IdlType>
+      <!-- Default Idl type -->
+
+      <!-- Force all MIDL compiles to be treated as English unless otherwise specified -->
+      <LocaleID>1033</LocaleID>
+
+      <!-- Disable the settings comment to make the headers more diff-able.  Only available in midl 8. razzle build already have this -->
+      <AdditionalOptions Condition="'$(BuildingWithBuildExe)'!='true'">%(AdditionalOptions) /no_settings_comment</AdditionalOptions>
+
+      <!--Disable midl timestamps wherever possible, razzle build already have this-->
+      <AdditionalOptions Condition="'$(BuildingWithBuildExe)'!='true'">%(AdditionalOptions) /no_stamp</AdditionalOptions>
+
+      <SuppressStartupBanner>true</SuppressStartupBanner>
+
+      <!-- Other defaults -->
+      <HeaderFileName>%(Filename).h</HeaderFileName>
+      <OutputDirectory>$(IntDir)</OutputDirectory>
+
+      <!-- ======== makefiledef ======== -->
+      <AdditionalOptions>%(AdditionalOptions) -sal</AdditionalOptions>
+
+      <!-- ======== sources.inc ======== -->
+      <!-- generates SAL annotations for our interface -->
+      <AdditionalOptions>%(AdditionalOptions) -sal_local</AdditionalOptions>
+      <PreprocessorDefinitions>%(PreprocessorDefinitions);WINVER=$(Win32_WinNTVersion)</PreprocessorDefinitions>
+    </Midl>
+    <ClCompile>
+      <PreprocessorDefinitions>%(PreprocessorDefinitions);NOMINMAX;USE_EDGEMODE_JSRT</PreprocessorDefinitions>
+      <!-- Some of our STDMETHOD can throw
+           TODO: Code review STDMETHOD and separate out API that can throw and those that can't -->
+      <PreprocessorDefinitions>%(PreprocessorDefinitions);COM_STDMETHOD_CAN_THROW</PreprocessorDefinitions>
+
+      <PreprocessorDefinitions Condition="'$(RuntimeLib)'=='static_library'">%(PreprocessorDefinitions);USE_STATIC_RUNTIMELIB</PreprocessorDefinitions>
+
+      <!-- Add any preprocessor definitions passed using msbuild environment -->
+      <PreprocessorDefinitions Condition="'$(AdditionalPreprocessorDefinitions)'!=''">%(PreprocessorDefinitions);$(AdditionalPreprocessorDefinitions)</PreprocessorDefinitions>
+
+      <!-- MIDL generate code uses this define -->
+      <PreprocessorDefinitions Condition="'$(Platform)'=='ARM'">%(PreprocessorDefinitions);_ARM_</PreprocessorDefinitions>
+
+      <!-- /W4 -->
+      <WarningLevel>Level4</WarningLevel>
+      <!-- /WX -->
+      <TreatWarningAsError>true</TreatWarningAsError>
+      <!-- /GR- -->
+      <RuntimeTypeInfo>false</RuntimeTypeInfo>
+      <!-- /Zi -->
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+      <DebugInformationFormat Condition="'%(MultiProcessorCompilation)' == 'true'">OldStyle</DebugInformationFormat>
+      <!-- /EHsc- -->
+      <ExceptionHandling>SyncCThrow</ExceptionHandling>
+      <!-- /Gz -->
+      <CallingConvention Condition="'$(Platform)'=='Win32' or '$(Platform)'=='chpe'">StdCall</CallingConvention>
+      <!-- /Zp8 -->
+      <StructMemberAlignment>8Bytes</StructMemberAlignment>
+      <!-- /GS -->
+      <BufferSecurityCheck>true</BufferSecurityCheck>
+      <!-- /Gy -->
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <!-- /GF -->
+      <ControlFlowGuard Condition="'$(Platform)'!='ARM'">Guard</ControlFlowGuard>
+      <!-- /guard:cf -->
+      <StringPooling>true</StringPooling>
+      <!-- /MD -->
+      <RuntimeLibrary Condition="'$(RuntimeLib)'!='static_library'">MultiThreadedDLL</RuntimeLibrary>
+      <RuntimeLibrary Condition="'$(RuntimeLib)'=='static_library'">MultiThreaded</RuntimeLibrary>
+
+      <!-- We don't use any metadata -->
+      <AdditionalUsingDirectories />
+
+      <AdditionalOptions>%(AdditionalOptions) /Zm125</AdditionalOptions>
+      <AdditionalOptions>%(AdditionalOptions) /Yl$(TargetName)</AdditionalOptions>
+      <!-- Separate global variable for linker -->
+      <AdditionalOptions>%(AdditionalOptions) /Gw</AdditionalOptions>
+
+      <!-- Enable warnings not included in W4 by default -->
+      <AdditionalOptions>%(AdditionalOptions) /w44242 /w44254</AdditionalOptions>
+
+      <ProgramDataBaseFileName Condition="'$(ConfigurationType)'=='StaticLibrary'">$(IntDir)$(TargetName).pdb</ProgramDataBaseFileName>
+      <ProgramDataBaseFileName Condition="'$(ConfigurationType)'!='StaticLibrary'">$(IntDir)</ProgramDataBaseFileName>
+
+      <!-- ======== For Code Coverage ======== -->
+      <PreprocessorDefinitions Condition="'$(ENABLE_CODECOVERAGE)'=='true'">
+        %(PreprocessorDefinitions);
+        BYTECODE_TESTING=1
+      </PreprocessorDefinitions>
+      <PreprocessorDefinitions Condition="'$(BuildWabt)'=='true'">%(PreprocessorDefinitions);CAN_BUILD_WABT=1</PreprocessorDefinitions>
+
+      <PreprocessorDefinitions Condition="'$(ChakraVersionBuildNumber)'!=''">%(PreprocessorDefinitions);CHAKRA_VERSION_BUILD_NUMBER=$(ChakraVersionBuildNumber)</PreprocessorDefinitions>
+      <PreprocessorDefinitions Condition="'$(ChakraVersionBuildQFENumber)'!=''">%(PreprocessorDefinitions);CHAKRA_VERSION_BUILD_QFE=$(ChakraVersionBuildQFENumber)</PreprocessorDefinitions>
+      <PreprocessorDefinitions Condition="'$(ChakraVersionBuildCommit)'!=''">%(PreprocessorDefinitions);CHAKRA_VERSION_BUILD_COMMIT=$(ChakraVersionBuildCommit)</PreprocessorDefinitions>
+      <PreprocessorDefinitions Condition="'$(ChakraVersionBuildDate)'!=''">%(PreprocessorDefinitions);CHAKRA_VERSION_BUILD_DATE=$(ChakraVersionBuildDate)</PreprocessorDefinitions>
+
+
+    </ClCompile>
+    <ResourceCompile>
+      <PreprocessorDefinitions Condition="'$(ChakraVersionBuildNumber)'!=''">%(PreprocessorDefinitions);CHAKRA_VERSION_BUILD_NUMBER=$(ChakraVersionBuildNumber)</PreprocessorDefinitions>
+      <PreprocessorDefinitions Condition="'$(ChakraVersionBuildQFENumber)'!=''">%(PreprocessorDefinitions);CHAKRA_VERSION_BUILD_QFE=$(ChakraVersionBuildQFENumber)</PreprocessorDefinitions>
+      <PreprocessorDefinitions Condition="'$(ChakraVersionBuildCommit)'!=''">%(PreprocessorDefinitions);CHAKRA_VERSION_BUILD_COMMIT=$(ChakraVersionBuildCommit)</PreprocessorDefinitions>
+      <PreprocessorDefinitions Condition="'$(ChakraVersionBuildDate)'!=''">%(PreprocessorDefinitions);CHAKRA_VERSION_BUILD_DATE=$(ChakraVersionBuildDate)</PreprocessorDefinitions>
+    </ResourceCompile>
+    <MASM>
+      <!-- /Cx -->
+      <PreserveIdentifierCase>3</PreserveIdentifierCase>
+    </MASM>
+    <Link>
+      <TreatLinkerWarningAsErrors>true</TreatLinkerWarningAsErrors>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <EnableCOMDATFolding Condition="'$(OptimizedBuild)'=='true' AND '$(ENABLE_CODECOVERAGE)'!='true'">true</EnableCOMDATFolding>
+      <OptimizeReferences Condition="'$(OptimizedBuild)'=='true'">true</OptimizeReferences>
+
+      <MinimumRequiredVersion Condition="'$(NtTargetVersion)'=='$(NtTargetVersion_Win7)'" >6.1</MinimumRequiredVersion>
+      <MinimumRequiredVersion Condition="'$(NtTargetVersion)'=='$(NtTargetVersion_Win8)'" >6.2</MinimumRequiredVersion>
+      <MinimumRequiredVersion Condition="'$(NtTargetVersion)'=='$(NtTargetVersion_WinBlue)'" >6.3</MinimumRequiredVersion>
+      <MinimumRequiredVersion Condition="'$(NtTargetVersion)'=='$(NtTargetVersion_Win10)'" >10.00</MinimumRequiredVersion>
+
+      <!-- Always set the checksum -->
+      <AdditionalOptions>%(AdditionalOptions) /release</AdditionalOptions>
+      <!-- Ignore Linker warning: This object file does not define any previously undefined public symbols -->
+      <AdditionalOptions>%(AdditionalOptions) /ignore:4221</AdditionalOptions>
+      <!-- ======== For Code Coverage ======== -->
+      <AdditionalOptions Condition="'$(ENABLE_CODECOVERAGE)'=='true'">%(AdditionalOptions) /DEBUGTYPE:CV,FIXUP</AdditionalOptions>
+    </Link>
+    <Lib>
+      <!-- Ignore Linker warning: This object file does not define any previously undefined public symbols -->
+      <AdditionalOptions>%(AdditionalOptions) /ignore:4221</AdditionalOptions>
+    </Lib>
+  </ItemDefinitionGroup>
+
+  <!--Optimization flags-->
+  <ItemDefinitionGroup Condition="'$(OptimizedBuild)'!='true' OR '$(ENABLE_CODECOVERAGE)'=='true'">
+    <ClCompile>
+      <Optimization>Disabled</Optimization>
+    </ClCompile>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(OptimizedBuild)'=='true' AND '$(ENABLE_CODECOVERAGE)'!='true'">
+    <ClCompile>
+      <Optimization>MaxSpeed</Optimization>
+      <!-- HYB-TODO: When a CHPE toolchain arrives that supports LTCG, remove this condition. -->
+      <WholeProgramOptimization Condition="'$(Platform)' != 'chpe'">true</WholeProgramOptimization>
+    </ClCompile>
+  </ItemDefinitionGroup>
+  
+    <!-- chk build flags -->  
+  <ItemDefinitionGroup Condition="'$(DebugBuild)'=='true'">
+    <ClCompile>
+      <PreprocessorDefinitions>%(PreprocessorDefinitions);_DEBUG;DBG;DBG_DUMP</PreprocessorDefinitions>
+    </ClCompile>
+    <ResourceCompile>
+      <PreprocessorDefinitions>%(PreprocessorDefinitions);DBG;ENABLE_DEBUG_CONFIG_OPTIONS=1</PreprocessorDefinitions>
+    </ResourceCompile>
+    <Midl>
+      <PreprocessorDefinitions>%(PreprocessorDefinitions);DBG</PreprocessorDefinitions>
+    </Midl>
+  </ItemDefinitionGroup>
+  <!-- fre and fretest build flags -->
+  <ItemDefinitionGroup Condition="'$(DebugBuild)'!='true'">
+    <ClCompile>
+      <PreprocessorDefinitions>%(PreprocessorDefinitions);NDEBUG</PreprocessorDefinitions>
+      <PreprocessorDefinitions Condition="'$(Configuration)'=='Test'">%(PreprocessorDefinitions);ENABLE_DEBUG_CONFIG_OPTIONS=1</PreprocessorDefinitions>
+    </ClCompile>
+    <ResourceCompile>
+      <PreprocessorDefinitions Condition="'$(Configuration)'=='Test'">%(PreprocessorDefinitions);ENABLE_DEBUG_CONFIG_OPTIONS=1</PreprocessorDefinitions>
+    </ResourceCompile>
+    <Link>
+      <LinkTimeCodeGeneration Condition="'$(PlatformToolset)'=='v120' OR '$(TF_BUILD)'!=''">UseLinkTimeCodeGeneration</LinkTimeCodeGeneration>
+      <LinkTimeCodeGeneration Condition="'$(PlatformToolset)'!='v120' AND '$(TF_BUILD)'==''">UseFastLinkTimeCodeGeneration</LinkTimeCodeGeneration>
+    </Link>
+    <Lib>
+      <LinkTimeCodeGeneration Condition="'$(Platform)' != 'chpe'">true</LinkTimeCodeGeneration>
+    </Lib>
+  </ItemDefinitionGroup>
+  <ItemGroup Condition="'$(ConfigurationType)'=='DynamicLibrary' OR '$(ConfigurationType)'=='Application'">
+    <Clean Include="$(OutDir)$(TargetName).lib" />
+    <Clean Include="$(OutDir)$(TargetName).exp" />
+    <Clean Include="$(OutDir)$(TargetName).ipdb" />
+    <Clean Include="$(OutDir)$(TargetName).iobj" />
+  </ItemGroup>
+</Project>

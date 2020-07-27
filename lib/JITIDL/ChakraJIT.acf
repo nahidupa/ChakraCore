@@ -1,0 +1,28 @@
+//-------------------------------------------------------------------------------------------------------
+// Copyright (C) Microsoft. All rights reserved.
+// Licensed under the MIT license. See LICENSE.txt file in the project root for full license information.
+//-------------------------------------------------------------------------------------------------------
+
+[
+    type_strict_context_handle
+]
+interface IChakraJIT
+{
+    UpdatePropertyRecordMap([context_handle_noserialize] threadContextInfoAddress);
+    AddDOMFastPathHelper([context_handle_noserialize] scriptContextInfoAddress);
+    AddModuleRecordInfo([context_handle_noserialize] scriptContextInfoAddress);
+    SetWellKnownHostTypeId([context_handle_noserialize] threadContextInfoAddress);
+    CloseScriptContext([context_handle_noserialize] scriptContextInfoAddress);
+    FreeAllocation([context_handle_noserialize] scriptContextInfoAddress);
+    NewInterpreterThunkBlock([context_handle_noserialize] scriptContextInfoAddress);
+    DecommitInterpreterBufferManager([context_handle_noserialize] scriptContextInfoAddress);
+    IsNativeAddr([context_handle_noserialize] threadContextInfoAddress);
+    SetIsPRNGSeeded([context_handle_noserialize] scriptContextInfoAddress);
+    RemoteCodeGen([context_handle_noserialize] scriptContextInfoAddress);
+
+#if DBG
+    IsInterpreterThunkAddr([context_handle_noserialize] scriptContextInfoAddress);
+#endif
+
+    typedef [encode, decode] pCodeGenWorkItemIDL;
+}
